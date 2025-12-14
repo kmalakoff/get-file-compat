@@ -24,7 +24,7 @@ function worker(endpoint, dest, callback) {
     if (!execPath) {
       const satisfiesSemverSync = _require('node-exec-path').satisfiesSemverSync;
       execPath = satisfiesSemverSync('>0'); // must be more than node 0.12
-      if (!execPath) return callback(new Error('get-remote needs a version of node >0 to use https'));
+      if (!execPath) return callback(new Error('get-file-compat needs a version of node >0 to use https'));
     }
 
     try {
@@ -41,7 +41,7 @@ function worker(endpoint, dest, callback) {
   const parsed = URL_REGEX.exec(endpoint);
   const protocol = parsed[1];
   const host = parsed[4];
-  const path = parsed[5];
+  const path = parsed[5] + (parsed[6] || '');
 
   const secure = protocol === 'https:';
   const requestOptions = { host, path, port: secure ? 443 : 80, method: 'GET', ...options };

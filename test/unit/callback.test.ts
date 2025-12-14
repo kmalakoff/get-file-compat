@@ -17,6 +17,23 @@ describe('callbacks', () => {
     mkdirp.sync(TEMP_DIR);
   });
 
+  it('should preserve query string in URLs', (done) => {
+    // npm search API requires 'text' query param - returns error without it
+    const url = 'https://registry.npmjs.org/-/v1/search?text=is-promise&size=1';
+    get(url, path.join(TEMP_DIR, 'search-result.json'), (err, filePath) => {
+      if (err) {
+        done(err);
+        return;
+      }
+      const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      // If query string was dropped, we'd get {error: "'text' query parameter is required"}
+      assert.ok(content.objects, 'Should have search results (query string preserved)');
+      assert.ok(content.objects.length > 0, 'Should have at least one result');
+      assert.strictEqual(content.objects[0].package.name, 'is-promise');
+      done();
+    });
+  });
+
   it('should download a text over https', (done) => {
     get('https://nodejs.org/dist/v24.12.0/SHASUMS256.txt', path.join(TEMP_DIR, 'SHASUMS256.txt'), (err, filePath) => {
       if (err) {
