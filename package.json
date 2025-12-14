@@ -1,0 +1,62 @@
+{
+  "name": "get-file-compat",
+  "version": "0.0.1",
+  "description": "Get a file from a URL and save it to disk",
+  "keywords": [
+    "exit",
+    "process",
+    "stdio",
+    "stdout",
+    "stderr",
+    "drain",
+    "flush"
+  ],
+  "homepage": "https://github.com/kmalakoff/get-file-compat",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/kmalakoff/get-file-compat.git"
+  },
+  "license": "MIT",
+  "author": "Kevin Malakoff <kmalakoff@gmail.com> (https://github.com/kmalakoff)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "dist/cjs/index.js",
+  "source": "src/index.ts",
+  "types": "dist/cjs/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsds build",
+    "format": "tsds format",
+    "prepublishOnly": "tsds validate",
+    "test": "tsds test:node --no-timeouts",
+    "test:engines": "nvu engines tsds test:node --no-timeouts",
+    "version": "tsds version"
+  },
+  "dependencies": {
+    "function-exec-sync": "^1.5.5",
+    "node-exec-path": "^1.1.18",
+    "on-one": "^1.0.10",
+    "pump": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.0.2",
+    "fs-remove-compat": "^0.2.3",
+    "mkdirp-classic": "^0.5.3",
+    "node-version-use": "^2.1.6",
+    "pinkie-promise": "^2.0.1",
+    "ts-dev-stack": "^1.21.3",
+    "tsds-config": "^0.2.2"
+  },
+  "engines": {
+    "node": ">=0.8"
+  }
+}
