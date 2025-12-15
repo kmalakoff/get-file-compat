@@ -2,7 +2,7 @@ import assert from 'assert';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import { safeRmSync } from 'fs-remove-compat';
-import get from 'get-file-compat';
+import get, { head } from 'get-file-compat';
 import mkdirp from 'mkdirp-classic';
 import oo from 'on-one';
 import * as path from 'path';
@@ -79,6 +79,19 @@ describe('callbacks', () => {
         assert.equal(expected, actual);
         done();
       });
+    });
+  });
+
+  it('should get headers with head request', (done) => {
+    head('https://nodejs.org/dist/v24.12.0/SHASUMS256.txt', (err, response) => {
+      if (err) {
+        done(err);
+        return;
+      }
+      assert.equal(response.statusCode, 200);
+      assert.ok(response.headers['content-type']);
+      assert.ok(response.headers['content-length']);
+      done();
     });
   });
 });

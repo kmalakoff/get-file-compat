@@ -3,10 +3,17 @@ import * as https from 'https';
 
 const URL_REGEX = /^(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/;
 
+export interface RequestOptions {
+  method?: 'GET' | 'HEAD';
+}
+
 export type RequestCallback = (err: Error | null, response?: http.IncomingMessage) => void;
 
-export default function makeRequest(endpoint: string, callback: RequestCallback): void {
-  const options = {};
+export default function makeRequest(endpoint: string, callback: RequestCallback): void;
+export default function makeRequest(endpoint: string, options: RequestOptions, callback: RequestCallback): void;
+export default function makeRequest(endpoint: string, optionsOrCallback: RequestOptions | RequestCallback, callback?: RequestCallback): void {
+  const options: RequestOptions = typeof optionsOrCallback === 'function' ? {} : optionsOrCallback;
+  const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
 
   // url.parse replacement
   const parsed = URL_REGEX.exec(endpoint);
@@ -15,21 +22,22 @@ export default function makeRequest(endpoint: string, callback: RequestCallback)
   const path = parsed[5] + (parsed[6] || '');
 
   const secure = protocol === 'https:';
-  const requestOptions = { host, path, port: secure ? 443 : 80, method: 'GET', ...options };
+  const method = options.method || 'GET';
+  const requestOptions = { host, path, port: secure ? 443 : 80, method };
   const req = secure ? https.request(requestOptions) : http.request(requestOptions);
 
   let called = false;
   const end = (err: Error | null, res?: http.IncomingMessage) => {
     if (called) return;
     called = true;
-    callback(err, res);
+    cb(err, res);
   };
 
   req.on('response', (res) => {
     // Follow 3xx redirects
     if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
       res.resume(); // Discard response
-      return makeRequest(res.headers.location, callback);
+      return makeRequest(res.headers.location, options, cb);
     }
 
     // Not successful
