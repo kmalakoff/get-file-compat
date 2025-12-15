@@ -1,6 +1,6 @@
 import type { Readable } from 'stream';
+import { readableFrom } from './compat.ts';
 import getContent from './getContent.ts';
-import { readableFrom } from './lib/compat.ts';
 import makeRequest from './lib/makeRequest.ts';
 
 // node <= 0.8 does not support https and node 0.12 certs cannot be trusted
@@ -8,14 +8,14 @@ const major = +process.versions.node.split('.')[0];
 const minor = +process.versions.node.split('.')[1];
 const noHTTPS = major === 0 && (minor <= 8 || minor === 12);
 
-export type GetStreamCallback = (err: Error | null, stream?: Readable) => void;
+import type { GetStreamCallback } from './types.ts';
 
 function worker(endpoint: string, callback: GetStreamCallback): void {
   // On old Node, use getContent then convert buffer to stream
   if (noHTTPS) {
-    getContent(endpoint, (err, buffer) => {
+    getContent(endpoint, (err, result) => {
       if (err) return callback(err);
-      const stream = readableFrom(buffer);
+      const stream = readableFrom(result.content);
       callback(null, stream);
     });
     return;

@@ -1,4 +1,3 @@
-import type * as http from 'http';
 import * as Module from 'module';
 import makeRequest from './lib/makeRequest.ts';
 
@@ -12,12 +11,7 @@ const noHTTPS = major === 0 && (minor <= 8 || minor === 12);
 let execPath = null; // break dependencies
 let functionExec = null; // break dependencies
 
-export interface HeadResponse {
-  statusCode: number;
-  headers: http.IncomingHttpHeaders;
-}
-
-export type HeadCallback = (err: Error | null, response?: HeadResponse) => void;
+import type { HeadCallback, HeadResponse } from './types.ts';
 
 function worker(endpoint: string, callback: HeadCallback): void {
   // node <=0.8 does not support https

@@ -1,6 +1,8 @@
 import * as fs from 'fs';
+import mkdirp from 'mkdirp-classic';
 import * as Module from 'module';
 import oo from 'on-one';
+import * as path from 'path';
 import pump from 'pump';
 import makeRequest from './lib/makeRequest.ts';
 
@@ -14,7 +16,7 @@ const noHTTPS = major === 0 && (minor <= 8 || minor === 12);
 let execPath = null; // break dependencies
 let functionExec = null; // break dependencies
 
-export type GetFileCallback = (err: Error | null, dest?: string) => void;
+import type { GetFileCallback, GetFileResult } from './types.ts';
 
 function worker(endpoint: string, dest: string, callback: GetFileCallback): void {
   // node <=0.8 does not support https
@@ -41,14 +43,18 @@ function worker(endpoint: string, dest: string, callback: GetFileCallback): void
   // Modern Node - use shared makeRequest
   makeRequest(endpoint, (err, res) => {
     if (err) return callback(err);
-    const stream = pump(res, fs.createWriteStream(dest));
-    oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
-      err ? callback(err) : callback(null, dest);
+    mkdirp(path.dirname(dest), (err) => {
+      if (err) return callback(err);
+
+      const stream = pump(res, fs.createWriteStream(dest));
+      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
+        err ? callback(err) : callback(null, { path: dest, headers: res.headers, statusCode: res.statusCode });
+      });
     });
   });
 }
 
-export default function getFile(endpoint: string, dest: string, callback?: GetFileCallback): undefined | Promise<string> {
+export default function getFile(endpoint: string, dest: string, callback?: GetFileCallback): undefined | Promise<GetFileResult> {
   if (typeof callback === 'function') return worker(endpoint, dest, callback) as undefined;
-  return new Promise((resolve, reject) => worker(endpoint, dest, (err, dest) => (err ? reject(err) : resolve(dest))));
+  return new Promise((resolve, reject) => worker(endpoint, dest, (err, result) => (err ? reject(err) : resolve(result))));
 }
