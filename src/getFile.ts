@@ -44,7 +44,7 @@ function worker(endpoint: string, dest: string, callback: GetFileCallback): void
   makeRequest(endpoint, (err, res) => {
     if (err) return callback(err);
     mkdirp(path.dirname(dest), (err) => {
-      if (err) return callback(err);
+      if (err && err.code !== 'EEXIST') return callback(err);
 
       const stream = pump(res, fs.createWriteStream(dest));
       oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
