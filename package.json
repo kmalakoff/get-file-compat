@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "mkdirp-classic": "^0.5.2",
-    "node-version-call-local": "^0.1.0",
+    "node-version-call-local": "^0.2.0",
     "on-one": "^1.0.0",
     "pump": "^3.0.0"
   },

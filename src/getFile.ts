@@ -30,7 +30,7 @@ function run(endpoint: string, dest: string, callback: GetFileCallback) {
   });
 }
 
-const worker = noHTTPS ? bind('>0', workerPath) : run;
+const worker = noHTTPS ? bind('>0', workerPath, { callbacks: true }) : run;
 
 export default function getFile(endpoint: string, dest: string): Promise<GetFileResult>;
 export default function getFile(endpoint: string, dest: string, callback: GetFileCallback): void;
