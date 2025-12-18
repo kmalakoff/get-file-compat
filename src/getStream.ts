@@ -10,7 +10,7 @@ const noHTTPS = major === 0 && (minor <= 8 || minor === 12);
 
 import type { GetStreamCallback } from './types.ts';
 
-function worker(endpoint: string, callback: GetStreamCallback): void {
+function worker(endpoint: string, callback: GetStreamCallback) {
   // On old Node, use getContent then convert buffer to stream
   if (noHTTPS) {
     getContent(endpoint, (err, result) => {
@@ -30,12 +30,7 @@ function worker(endpoint: string, callback: GetStreamCallback): void {
 
 export default function getStream(endpoint: string): Promise<Readable>;
 export default function getStream(endpoint: string, callback: GetStreamCallback): void;
-export default function getStream(endpoint: string, callback?: GetStreamCallback): undefined | Promise<Readable> {
-  if (typeof callback === 'function') {
-    return worker(endpoint, callback) as undefined;
-  }
-
-  return new Promise((resolve, reject) => {
-    worker(endpoint, (err, stream) => (err ? reject(err) : resolve(stream)));
-  });
+export default function getStream(endpoint: string, callback?: GetStreamCallback): void | Promise<Readable> {
+  if (typeof callback === 'function') return worker(endpoint, callback);
+  return new Promise((resolve, reject) => worker(endpoint, (err, stream) => (err ? reject(err) : resolve(stream))));
 }

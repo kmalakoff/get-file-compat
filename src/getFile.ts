@@ -18,7 +18,7 @@ let functionExec = null; // break dependencies
 
 import type { GetFileCallback, GetFileResult } from './types.ts';
 
-function worker(endpoint: string, dest: string, callback: GetFileCallback): void {
+function worker(endpoint: string, dest: string, callback: GetFileCallback) {
   // node <=0.8 does not support https
   if (noHTTPS) {
     if (!execPath) {
@@ -54,7 +54,9 @@ function worker(endpoint: string, dest: string, callback: GetFileCallback): void
   });
 }
 
-export default function getFile(endpoint: string, dest: string, callback?: GetFileCallback): undefined | Promise<GetFileResult> {
-  if (typeof callback === 'function') return worker(endpoint, dest, callback) as undefined;
+export default function getFile(endpoint: string, dest: string): Promise<GetFileResult>;
+export default function getFile(endpoint: string, dest: string, callback: GetFileCallback): void;
+export default function getFile(endpoint: string, dest: string, callback?: GetFileCallback): void | Promise<GetFileResult> {
+  if (typeof callback === 'function') return worker(endpoint, dest, callback);
   return new Promise((resolve, reject) => worker(endpoint, dest, (err, result) => (err ? reject(err) : resolve(result))));
 }
