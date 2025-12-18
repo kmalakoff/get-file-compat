@@ -13,7 +13,7 @@ let functionExec = null; // break dependencies
 
 import type { HeadCallback, HeadResponse } from './types.ts';
 
-function worker(endpoint: string, callback: HeadCallback): void {
+function worker(endpoint: string, callback: HeadCallback) {
   // node <=0.8 does not support https
   if (noHTTPS) {
     if (!execPath) {
@@ -48,12 +48,7 @@ function worker(endpoint: string, callback: HeadCallback): void {
 
 export default function head(endpoint: string): Promise<HeadResponse>;
 export default function head(endpoint: string, callback: HeadCallback): void;
-export default function head(endpoint: string, callback?: HeadCallback): undefined | Promise<HeadResponse> {
-  if (typeof callback === 'function') {
-    return worker(endpoint, callback) as undefined;
-  }
-
-  return new Promise((resolve, reject) => {
-    worker(endpoint, (err, response) => (err ? reject(err) : resolve(response)));
-  });
+export default function head(endpoint: string, callback?: HeadCallback): void | Promise<HeadResponse> {
+  if (typeof callback === 'function') return worker(endpoint, callback);
+  return new Promise((resolve, reject) => worker(endpoint, (err, response) => (err ? reject(err) : resolve(response))));
 }

@@ -15,7 +15,7 @@ let functionExec = null; // break dependencies
 
 import type { GetContentCallback, GetContentResult } from './types.ts';
 
-function worker(endpoint: string, encoding: BufferEncoding | null, callback: GetContentCallback<Buffer | string>): void {
+function worker(endpoint: string, encoding: BufferEncoding | null, callback: GetContentCallback<Buffer | string>) {
   // node <=0.8 does not support https
   if (noHTTPS) {
     if (!execPath) {
@@ -64,7 +64,7 @@ export default function getContent(endpoint: string): Promise<GetContentResult<B
 export default function getContent(endpoint: string, encoding: BufferEncoding): Promise<GetContentResult<string>>;
 export default function getContent(endpoint: string, callback: GetContentCallback<Buffer>): void;
 export default function getContent(endpoint: string, encoding: BufferEncoding, callback: GetContentCallback<string>): void;
-export default function getContent(endpoint: string, encodingOrCallback?: BufferEncoding | GetContentCallback<Buffer>, callback?: GetContentCallback<string>): undefined | Promise<GetContentResult<Buffer | string>> {
+export default function getContent(endpoint: string, encodingOrCallback?: BufferEncoding | GetContentCallback<Buffer>, callback?: GetContentCallback<string>): void | Promise<GetContentResult<Buffer | string>> {
   // Normalize arguments
   let encoding: BufferEncoding | null = null;
   let cb: GetContentCallback<Buffer | string> | undefined;
@@ -76,11 +76,6 @@ export default function getContent(endpoint: string, encodingOrCallback?: Buffer
     cb = callback;
   }
 
-  if (typeof cb === 'function') {
-    return worker(endpoint, encoding, cb) as undefined;
-  }
-
-  return new Promise((resolve, reject) => {
-    worker(endpoint, encoding, (err, result) => (err ? reject(err) : resolve(result)));
-  });
+  if (typeof cb === 'function') return worker(endpoint, encoding, cb);
+  return new Promise((resolve, reject) => worker(endpoint, encoding, (err, result) => (err ? reject(err) : resolve(result))));
 }
