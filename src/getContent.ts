@@ -30,7 +30,7 @@ function run(endpoint: string, encoding: BufferEncoding | null, callback: GetCon
   });
 }
 
-const call = bind('>0', workerPath);
+const call = bind('>0', workerPath, { callbacks: true });
 
 function worker(endpoint: string, encoding: BufferEncoding | null, callback: GetContentCallback<Buffer | string>) {
   if (!noHTTPS) {
