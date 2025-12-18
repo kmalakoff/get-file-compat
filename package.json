@@ -41,9 +41,8 @@
     "version": "tsds version"
   },
   "dependencies": {
-    "function-exec-sync": "^1.0.0",
     "mkdirp-classic": "^0.5.2",
-    "node-exec-path": "^1.0.0",
+    "node-version-call-local": "^0.1.0",
     "on-one": "^1.0.0",
     "pump": "^3.0.0"
   },
