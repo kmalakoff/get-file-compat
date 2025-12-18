@@ -30,7 +30,8 @@ function run(endpoint: string, encoding: BufferEncoding | null, callback: GetCon
   });
 }
 
-const call = bind('>0', workerPath, { callbacks: true });
+// spawnOptions: false - no node/npm spawn (network only)
+const call = bind('>0', workerPath, { callbacks: true, spawnOptions: false });
 
 function worker(endpoint: string, encoding: BufferEncoding | null, callback: GetContentCallback<Buffer | string>) {
   if (!noHTTPS) {
