@@ -23,7 +23,8 @@ function run(endpoint: string, callback: HeadCallback) {
   });
 }
 
-const worker = noHTTPS ? bind('>0', workerPath, { callbacks: true }) : run;
+// spawnOptions: false - no node/npm spawn (network only)
+const worker = noHTTPS ? bind('>0', workerPath, { callbacks: true, spawnOptions: false }) : run;
 
 export default function head(endpoint: string): Promise<HeadResponse>;
 export default function head(endpoint: string, callback: HeadCallback): void;
