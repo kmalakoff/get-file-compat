@@ -1,6 +1,6 @@
 {
   "name": "get-file-compat",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Get a file from a URL and save it to disk",
   "keywords": [
     "exit",
