@@ -5,6 +5,7 @@ const URL_REGEX = /^(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/;
 
 export interface RequestOptions {
   method?: 'GET' | 'HEAD';
+  timeout?: number;
 }
 
 export type RequestCallback = (err: Error | null, response?: http.IncomingMessage) => void;
@@ -32,6 +33,13 @@ export default function makeRequest(endpoint: string, optionsOrCallback: Request
     called = true;
     cb(err, res);
   };
+
+  if (options.timeout) {
+    req.setTimeout(options.timeout, () => {
+      req.abort();
+      end(new Error(`Request timeout after ${options.timeout}ms`));
+    });
+  }
 
   req.on('response', (res) => {
     // Follow 3xx redirects
