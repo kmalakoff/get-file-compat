@@ -3,7 +3,7 @@ import path from 'path';
 import url from 'url';
 import makeRequest from './lib/makeRequest.ts';
 
-import type { HeadCallback, HeadResponse } from './types.ts';
+import type { HeadCallback, HeadOptions, HeadResponse } from './types.ts';
 
 // node <= 0.8 does not support https and node 0.12 certs cannot be trusted
 const major = +process.versions.node.split('.')[0];
@@ -12,8 +12,8 @@ const noHTTPS = major === 0 && (minor <= 8 || minor === 12);
 const __dirname = path.dirname(typeof __filename === 'undefined' ? url.fileURLToPath(import.meta.url) : __filename);
 const workerPath = path.join(__dirname, '..', 'cjs', 'head.js');
 
-function run(endpoint: string, callback: HeadCallback) {
-  makeRequest(endpoint, { method: 'HEAD' }, (err, res) => {
+function run(endpoint: string, options: HeadOptions, callback: HeadCallback) {
+  makeRequest(endpoint, { method: 'HEAD', timeout: options.timeout }, (err, res) => {
     if (err) return callback(err);
     res.resume(); // Discard any body
     callback(null, {
@@ -27,11 +27,16 @@ function run(endpoint: string, callback: HeadCallback) {
 const worker = noHTTPS ? bind('>0', workerPath, { callbacks: true, spawnOptions: false }) : run;
 
 export default function head(endpoint: string): Promise<HeadResponse>;
+export default function head(endpoint: string, options: HeadOptions): Promise<HeadResponse>;
 export default function head(endpoint: string, callback: HeadCallback): void;
-export default function head(endpoint: string, callback?: HeadCallback): void | Promise<HeadResponse> {
-  if (typeof callback === 'function') {
-    worker(endpoint, callback);
+export default function head(endpoint: string, options: HeadOptions, callback: HeadCallback): void;
+export default function head(endpoint: string, optionsOrCallback?: HeadOptions | HeadCallback, callback?: HeadCallback): void | Promise<HeadResponse> {
+  const options: HeadOptions = typeof optionsOrCallback === 'function' ? {} : optionsOrCallback || {};
+  const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
+
+  if (typeof cb === 'function') {
+    worker(endpoint, options, cb);
     return;
   }
-  return new Promise((resolve, reject) => worker(endpoint, (err, response) => (err ? reject(err) : resolve(response))));
+  return new Promise((resolve, reject) => worker(endpoint, options, (err, response) => (err ? reject(err) : resolve(response))));
 }
