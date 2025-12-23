@@ -77,9 +77,6 @@ export default function getContent(endpoint: string, encodingOrOptionsOrCallback
     }
   }
 
-  if (typeof cb === 'function') {
-    worker(endpoint, encoding, options, cb);
-    return;
-  }
+  if (typeof cb === 'function') return worker(endpoint, encoding, options, cb);
   return new Promise((resolve, reject) => worker(endpoint, encoding, options, (err, result) => (err ? reject(err) : resolve(result))));
 }
