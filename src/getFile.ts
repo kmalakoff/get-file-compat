@@ -30,8 +30,10 @@ function run(endpoint: string, dest: string, options: GetFileOptions, callback: 
   });
 }
 
+type getFileFunction = (endpoint: string, dest: string, options: GetFileOptions, callback: GetFileCallback) => void;
+
 // spawnOptions: false - no node/npm spawn (network + fs only)
-const worker = noHTTPS ? bind('>0', workerPath, { callbacks: true, spawnOptions: false }) : run;
+const worker = (noHTTPS ? bind('>0', workerPath, { callbacks: true, spawnOptions: false }) : run) as getFileFunction;
 
 export default function getFile(endpoint: string, dest: string): Promise<GetFileResult>;
 export default function getFile(endpoint: string, dest: string, options: GetFileOptions): Promise<GetFileResult>;
@@ -41,9 +43,6 @@ export default function getFile(endpoint: string, dest: string, optionsOrCallbac
   const options: GetFileOptions = typeof optionsOrCallback === 'function' ? {} : optionsOrCallback || {};
   const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
 
-  if (typeof cb === 'function') {
-    worker(endpoint, dest, options, cb);
-    return;
-  }
+  if (typeof cb === 'function') return worker(endpoint, dest, options, cb);
   return new Promise((resolve, reject) => worker(endpoint, dest, options, (err, result) => (err ? reject(err) : resolve(result))));
 }

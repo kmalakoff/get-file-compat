@@ -23,8 +23,10 @@ function run(endpoint: string, options: HeadOptions, callback: HeadCallback) {
   });
 }
 
+type headFunction = (endpoint: string, options: HeadOptions, callback: HeadCallback) => void;
+
 // spawnOptions: false - no node/npm spawn (network only)
-const worker = noHTTPS ? bind('>0', workerPath, { callbacks: true, spawnOptions: false }) : run;
+const worker = (noHTTPS ? bind('>0', workerPath, { callbacks: true, spawnOptions: false }) : run) as headFunction;
 
 export default function head(endpoint: string): Promise<HeadResponse>;
 export default function head(endpoint: string, options: HeadOptions): Promise<HeadResponse>;
@@ -34,9 +36,6 @@ export default function head(endpoint: string, optionsOrCallback?: HeadOptions |
   const options: HeadOptions = typeof optionsOrCallback === 'function' ? {} : optionsOrCallback || {};
   const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
 
-  if (typeof cb === 'function') {
-    worker(endpoint, options, cb);
-    return;
-  }
+  if (typeof cb === 'function') return worker(endpoint, options, cb);
   return new Promise((resolve, reject) => worker(endpoint, options, (err, response) => (err ? reject(err) : resolve(response))));
 }
