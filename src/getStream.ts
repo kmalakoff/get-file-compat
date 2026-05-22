@@ -3,10 +3,9 @@ import { readableFrom } from './compat.ts';
 import getContent from './getContent.ts';
 import makeRequest from './lib/makeRequest.ts';
 
-// node <= 0.8 does not support https and node 0.12 certs cannot be trusted
+// node 0.x does not support https or has untrusted certs
 const major = +process.versions.node.split('.')[0];
-const minor = +process.versions.node.split('.')[1];
-const noHTTPS = major === 0 && (minor <= 8 || minor === 12);
+const noHTTPS = major === 0;
 
 import type { GetStreamCallback, GetStreamOptions } from './types.ts';
 
