@@ -14,7 +14,7 @@ function worker(endpoint: string, options: GetStreamOptions, callback: GetStream
   if (noHTTPS) {
     getContent(endpoint, options, (err, result) => {
       if (err) return callback(err);
-      const stream = readableFrom(result.content);
+      const stream = readableFrom(result?.content as Buffer);
       callback(null, stream);
     });
     return;
@@ -36,5 +36,5 @@ export default function getStream(endpoint: string, optionsOrCallback?: GetStrea
   const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
 
   if (typeof cb === 'function') return worker(endpoint, options, cb);
-  return new Promise((resolve, reject) => worker(endpoint, options, (err, stream) => (err ? reject(err) : resolve(stream))));
+  return new Promise((resolve, reject) => worker(endpoint, options, (err, stream) => (err ? reject(err) : resolve(stream as Readable))));
 }

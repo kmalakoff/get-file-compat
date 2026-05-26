@@ -34,10 +34,7 @@ describe('getFile', () => {
     // npm search API requires 'text' query param - returns error without it
     const url = 'https://registry.npmjs.org/-/v1/search?text=is-promise&size=1';
     get(url, path.join(TEMP_DIR, 'search-result.json'), (err, result) => {
-      if (err) {
-        done(err);
-        return;
-      }
+      if (err || !result) return done(err ?? new Error('No result'));
       const content = JSON.parse(fs.readFileSync(result.path, 'utf8'));
       // If query string was dropped, we'd get {error: "'text' query parameter is required"}
       assert.ok(content.objects, 'Should have search results (query string preserved)');
@@ -64,10 +61,7 @@ describe('getFile', () => {
 
   it('should download a text over https', (done) => {
     get('https://nodejs.org/dist/v24.12.0/SHASUMS256.txt', path.join(TEMP_DIR, 'SHASUMS256.txt'), (err, result) => {
-      if (err) {
-        done(err);
-        return;
-      }
+      if (err || !result) return done(err ?? new Error('No result'));
       const content = fs.readFileSync(result.path, 'utf8');
       assert.ok(content.indexOf('win-x64/node_pdb.zip') >= 0);
       assert.equal(result.statusCode, 200);
@@ -86,10 +80,7 @@ describe('getFile', () => {
 
   it('should download json over https', (done) => {
     get('https://registry.npmjs.org/-/package/npm/dist-tags', path.join(TEMP_DIR, 'dist-tags.json'), (err, result) => {
-      if (err) {
-        done(err);
-        return;
-      }
+      if (err || !result) return done(err ?? new Error('No result'));
       const content = JSON.parse(fs.readFileSync(result.path, 'utf8'));
       assert.ok(content.latest !== undefined);
       assert.equal(result.statusCode, 200);
@@ -109,21 +100,15 @@ describe('getFile', () => {
   it('should download compressed file over https', (done) => {
     const filename = 'node-v24.12.0-linux-x64.tar.gz';
     get(`https://nodejs.org/dist/v24.12.0/${filename}`, path.join(TEMP_DIR, filename), (err, result) => {
-      if (err) {
-        done(err);
-        return;
-      }
+      if (err || !result) return done(err ?? new Error('No result'));
       assert.equal(result.statusCode, 200);
       const text = fs.readFileSync(path.join(TEMP_DIR, 'SHASUMS256.txt'), 'utf8');
-      const expected = text.split(filename)[0].split('\n').pop().trim();
+      const expected = text.split(filename)[0].split('\n').pop()?.trim();
       const hash = crypto.createHash('sha256');
       const stream = fs.createReadStream(result.path);
       stream.on('data', (data) => hash.update(data));
-      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
-        if (err) {
-          done(err);
-          return;
-        }
+      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
+        if (err) return done(err);
         const actual = hash.digest('hex');
         assert.equal(expected, actual);
         done();
@@ -137,15 +122,12 @@ describe('getFile', () => {
       const result = await get(`https://nodejs.org/dist/v24.12.0/${filename}`, path.join(TEMP_DIR, `${filename}-async`));
       assert.equal(result.statusCode, 200);
       const text = fs.readFileSync(path.join(TEMP_DIR, 'SHASUMS256.txt'), 'utf8');
-      const expected = text.split(filename)[0].split('\n').pop().trim();
+      const expected = text.split(filename)[0].split('\n').pop()?.trim();
       const hash = crypto.createHash('sha256');
       const stream = fs.createReadStream(result.path);
       stream.on('data', (data) => hash.update(data));
-      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
-        if (err) {
-          done(err);
-          return;
-        }
+      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
+        if (err) return done(err);
         const actual = hash.digest('hex');
         assert.equal(expected, actual);
         done();
@@ -155,8 +137,9 @@ describe('getFile', () => {
 
   it('should get headers with head request', (done) => {
     head('https://nodejs.org/dist/v24.12.0/SHASUMS256.txt', (err, response) => {
-      if (err) {
-        done(err);
+      if (err) return done(err);
+      if (!response) {
+        done(new Error('No response'));
         return;
       }
       assert.equal(response.statusCode, 200);

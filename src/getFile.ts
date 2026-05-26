@@ -18,12 +18,13 @@ const workerPath = path.join(__dirname, '..', 'cjs', 'getFile.js');
 function run(endpoint: string, dest: string, options: GetFileOptions, callback: GetFileCallback) {
   makeRequest(endpoint, { timeout: options.timeout }, (err, res) => {
     if (err) return callback(err);
-    mkdirp(path.dirname(dest), (err) => {
-      if (err && err.code !== 'EEXIST') return callback(err);
+    if (!res) return callback(new Error('No response'));
+    mkdirp(path.dirname(dest), (err: Error | null) => {
+      if (err && (err as NodeJS.ErrnoException).code !== 'EEXIST') return callback(err);
 
       const stream = pump(res, fs.createWriteStream(dest));
-      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
-        err ? callback(err) : callback(null, { path: dest, headers: res.headers, statusCode: res.statusCode });
+      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
+        err ? callback(err) : callback(null, { path: dest, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 });
       });
     });
   });
@@ -43,5 +44,5 @@ export default function getFile(endpoint: string, dest: string, optionsOrCallbac
   const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
 
   if (typeof cb === 'function') return worker(endpoint, dest, options, cb);
-  return new Promise((resolve, reject) => worker(endpoint, dest, options, (err, result) => (err ? reject(err) : resolve(result))));
+  return new Promise((resolve, reject) => worker(endpoint, dest, options, (err, result) => (err ? reject(err) : resolve(result as GetFileResult))));
 }

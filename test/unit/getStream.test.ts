@@ -53,7 +53,7 @@ describe('getStream', () => {
     stream.on('data', (chunk: Buffer) => chunks.push(chunk));
 
     await new Promise<void>((resolve, reject) => {
-      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
+      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
         if (err) return reject(err);
         resolve();
       });
@@ -72,7 +72,7 @@ describe('getStream', () => {
       const chunks: Buffer[] = [];
       stream.on('data', (chunk: Buffer) => chunks.push(chunk));
 
-      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
+      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
         if (err) return done(err);
         const content = Buffer.concat(chunks).toString('utf8');
         assert.ok(content.indexOf('win-x64/node_pdb.zip') >= 0, 'Should contain expected text');
@@ -89,7 +89,7 @@ describe('getStream', () => {
     stream.pipe(writeStream);
 
     await new Promise<void>((resolve, reject) => {
-      oo(writeStream, ['error', 'finish'], (err?: Error) => {
+      oo(writeStream, ['error', 'finish'], (err: Error | null) => {
         if (err) return reject(err);
         resolve();
       });
@@ -107,7 +107,7 @@ describe('getStream', () => {
     stream.on('data', (data: Buffer) => hash.update(data));
 
     await new Promise<void>((resolve, reject) => {
-      oo(stream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
+      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
         if (err) return reject(err);
         resolve();
       });
@@ -121,7 +121,7 @@ describe('getStream', () => {
       const chunks: Buffer[] = [];
       shaStream.on('data', (chunk: Buffer) => chunks.push(chunk));
       await new Promise<void>((resolve, reject) => {
-        oo(shaStream, ['error', 'end', 'close', 'finish'], (err?: Error) => {
+        oo(shaStream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
           if (err) return reject(err);
           resolve();
         });
@@ -130,7 +130,7 @@ describe('getStream', () => {
     }
 
     const text = fs.readFileSync(shasumsPath, 'utf8');
-    const expected = text.split(filename)[0].split('\n').pop().trim();
+    const expected = text.split(filename)[0].split('\n').pop()?.trim();
     const actual = hash.digest('hex');
     assert.strictEqual(expected, actual, 'Hash should match');
   });

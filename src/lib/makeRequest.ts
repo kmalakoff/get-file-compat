@@ -14,17 +14,20 @@ export default function makeRequest(endpoint: string, callback: RequestCallback)
 export default function makeRequest(endpoint: string, options: RequestOptions, callback: RequestCallback): void;
 export default function makeRequest(endpoint: string, optionsOrCallback: RequestOptions | RequestCallback, callback?: RequestCallback): void {
   const options: RequestOptions = typeof optionsOrCallback === 'function' ? {} : optionsOrCallback;
-  const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
+  const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : (callback as RequestCallback);
 
   // url.parse replacement
-  const parsed = URL_REGEX.exec(endpoint);
-  const protocol = parsed[1];
-  const host = parsed[4];
-  const path = parsed[5] + (parsed[6] || '');
+  const match = URL_REGEX.exec(endpoint);
+  const parsed = match ? { protocol: match[1], host: match[4], path: (match[5] || '') + (match[6] || '') } : null;
+  const protocol = parsed?.protocol ?? '';
+  const host = parsed?.host ?? '';
+  const pathname = parsed?.path ?? '';
+
+  if (!host) return cb(new Error(`Invalid URL: no host in '${endpoint}'`));
 
   const secure = protocol === 'https:';
   const method = options.method || 'GET';
-  const requestOptions = { host, path, port: secure ? 443 : 80, method };
+  const requestOptions = { host, path: pathname, port: secure ? 443 : 80, method };
   const req = secure ? https.request(requestOptions) : http.request(requestOptions);
 
   let called = false;
@@ -43,15 +46,9 @@ export default function makeRequest(endpoint: string, optionsOrCallback: Request
 
   req.on('response', (res) => {
     // Follow 3xx redirects
-    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+    if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
       res.resume(); // Discard response
       return makeRequest(res.headers.location, options, cb);
-    }
-
-    // Not successful
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      res.resume(); // Discard response
-      return end(new Error(`Response code ${res.statusCode} (${http.STATUS_CODES[res.statusCode]})`));
     }
 
     end(null, res);

@@ -33,7 +33,7 @@ describe('getContent', () => {
 
     it('callback: should return a Buffer', (done) => {
       getContent(TEXT_URL, (err, result) => {
-        if (err) return done(err);
+        if (err || !result) return done(err ?? new Error('No result'));
         assert.ok(Buffer.isBuffer(result.content), 'Should return a Buffer');
         assert.ok(result.content.length > 0, 'Buffer should have content');
         assert.equal(result.statusCode, 200);
@@ -53,7 +53,7 @@ describe('getContent', () => {
 
     it('callback: should return a string', (done) => {
       getContent(TEXT_URL, 'utf8', (err, result) => {
-        if (err) return done(err);
+        if (err || !result) return done(err ?? new Error('No result'));
         assert.strictEqual(typeof result.content, 'string', 'Should return a string');
         assert.ok(result.content.indexOf('win-x64/node_pdb.zip') >= 0, 'Should contain expected text');
         assert.equal(result.statusCode, 200);
@@ -74,7 +74,7 @@ describe('getContent', () => {
 
     it('callback: should return a base64 encoded string', (done) => {
       getContent(TEXT_URL, 'base64', (err, result) => {
-        if (err) return done(err);
+        if (err || !result) return done(err ?? new Error('No result'));
         assert.strictEqual(typeof result.content, 'string', 'Should return a string');
         const decoded = bufferFrom(result.content, 'base64').toString('utf8');
         assert.ok(decoded.indexOf('win-x64/node_pdb.zip') >= 0, 'Decoded content should contain expected text');
@@ -96,7 +96,7 @@ describe('getContent', () => {
 
     it('callback: should return a hex encoded string', (done) => {
       getContent(TEXT_URL, 'hex', (err, result) => {
-        if (err) return done(err);
+        if (err || !result) return done(err ?? new Error('No result'));
         assert.strictEqual(typeof result.content, 'string', 'Should return a string');
         const decoded = bufferFrom(result.content, 'hex').toString('utf8');
         assert.ok(decoded.indexOf('win-x64/node_pdb.zip') >= 0, 'Decoded content should contain expected text');
@@ -148,7 +148,7 @@ describe('getContent', () => {
 
     it('callback: utf8 then JSON.parse', (done) => {
       getContent(JSON_URL, 'utf8', (err, result) => {
-        if (err) return done(err);
+        if (err || !result) return done(err ?? new Error('No result'));
         const parsed = JSON.parse(result.content);
         assert.ok(parsed.latest !== undefined, 'Should have latest property');
         assert.equal(result.statusCode, 200);

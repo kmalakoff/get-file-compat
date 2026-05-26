@@ -14,9 +14,10 @@ const workerPath = path.join(__dirname, '..', 'cjs', 'head.js');
 function run(endpoint: string, options: HeadOptions, callback: HeadCallback) {
   makeRequest(endpoint, { method: 'HEAD', timeout: options.timeout }, (err, res) => {
     if (err) return callback(err);
+    if (!res) return callback(new Error('No response'));
     res.resume(); // Discard any body
     callback(null, {
-      statusCode: res.statusCode,
+      statusCode: res.statusCode ?? 0,
       headers: res.headers,
     });
   });
@@ -36,5 +37,5 @@ export default function head(endpoint: string, optionsOrCallback?: HeadOptions |
   const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
 
   if (typeof cb === 'function') return worker(endpoint, options, cb);
-  return new Promise((resolve, reject) => worker(endpoint, options, (err, response) => (err ? reject(err) : resolve(response))));
+  return new Promise((resolve, reject) => worker(endpoint, options, (err, response) => (err ? reject(err) : resolve(response as HeadResponse))));
 }

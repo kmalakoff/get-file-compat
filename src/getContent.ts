@@ -16,16 +16,17 @@ const workerPath = path.join(__dirname, '..', 'cjs', 'getContent.js');
 function run(endpoint: string, encoding: BufferEncoding | null, options: GetContentOptions, callback: GetContentCallback<Buffer | string>) {
   makeRequest(endpoint, { timeout: options.timeout }, (err, res) => {
     if (err) return callback(err);
+    if (!res) return callback(new Error('No response'));
 
     const chunks: Buffer[] = [];
     res.on('data', (chunk: Buffer) => {
       chunks.push(chunk);
     });
-    oo(res, ['error', 'end', 'close', 'finish'], (err?: Error) => {
+    oo(res, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
       if (err) return callback(err);
       const buffer = Buffer.concat(chunks);
-      const content = encoding ? buffer.toString(encoding) : buffer;
-      callback(null, { content, headers: res.headers, statusCode: res.statusCode });
+      const content: Buffer | string = encoding ? buffer.toString(encoding) : buffer;
+      callback(null, { content, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 });
     });
   });
 }
@@ -41,7 +42,7 @@ function worker(endpoint: string, encoding: BufferEncoding | null, options: GetC
   const enc = encoding || 'base64';
   call(endpoint, enc, options, (err: Error | null, result: GetContentResult<string>) => {
     if (err) return callback(err);
-    const content = encoding ? result.content : bufferFrom(result.content, 'base64');
+    const content: Buffer | string = encoding ? result.content : bufferFrom(result.content, 'base64');
     callback(null, { content, headers: result.headers, statusCode: result.statusCode });
   });
 }
@@ -54,29 +55,29 @@ export default function getContent(endpoint: string, callback: GetContentCallbac
 export default function getContent(endpoint: string, options: GetContentOptions, callback: GetContentCallback<Buffer>): void;
 export default function getContent(endpoint: string, encoding: BufferEncoding, callback: GetContentCallback<string>): void;
 export default function getContent(endpoint: string, encoding: BufferEncoding, options: GetContentOptions, callback: GetContentCallback<string>): void;
-export default function getContent(endpoint: string, encodingOrOptionsOrCallback?: BufferEncoding | GetContentOptions | GetContentCallback<Buffer>, optionsOrCallback?: GetContentOptions | GetContentCallback<Buffer | string>, callback?: GetContentCallback<string>): void | Promise<GetContentResult<Buffer | string>> {
+export default function getContent(endpoint: string, ...args: unknown[]): void | Promise<GetContentResult<Buffer | string>> {
   let encoding: BufferEncoding | null = null;
   let options: GetContentOptions = {};
   let cb: GetContentCallback<Buffer | string> | undefined;
 
   // Parse arguments
-  if (typeof encodingOrOptionsOrCallback === 'function') {
-    cb = encodingOrOptionsOrCallback;
-  } else if (typeof encodingOrOptionsOrCallback === 'string') {
-    encoding = encodingOrOptionsOrCallback;
-    if (typeof optionsOrCallback === 'function') {
-      cb = optionsOrCallback;
-    } else if (optionsOrCallback) {
-      options = optionsOrCallback;
-      cb = callback;
+  if (typeof args[0] === 'function') {
+    cb = args[0] as GetContentCallback<Buffer | string>;
+  } else if (typeof args[0] === 'string') {
+    encoding = args[0] as BufferEncoding;
+    if (typeof args[1] === 'function') {
+      cb = args[1] as GetContentCallback<Buffer | string>;
+    } else if (args[1]) {
+      options = args[1] as GetContentOptions;
+      cb = args[2] as GetContentCallback<Buffer | string>;
     }
-  } else if (encodingOrOptionsOrCallback) {
-    options = encodingOrOptionsOrCallback;
-    if (typeof optionsOrCallback === 'function') {
-      cb = optionsOrCallback;
+  } else if (args[0]) {
+    options = args[0] as GetContentOptions;
+    if (typeof args[1] === 'function') {
+      cb = args[1] as GetContentCallback<Buffer | string>;
     }
   }
 
   if (typeof cb === 'function') return worker(endpoint, encoding, options, cb);
-  return new Promise((resolve, reject) => worker(endpoint, encoding, options, (err, result) => (err ? reject(err) : resolve(result))));
+  return new Promise((resolve, reject) => worker(endpoint, encoding, options, (err, result) => (err ? reject(err) : resolve(result as GetContentResult<Buffer | string>))));
 }
