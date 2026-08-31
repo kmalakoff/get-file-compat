@@ -1,1 +1,1 @@
-ignores: ["node-version-use", "ts-dev-stack", "get-file-compat", "function-exec-sync", "node-exec-path"]
+ignores: ["get-file-compat", "node-version-use", "ts-dev-stack", "function-exec-sync", "node-exec-path"]
