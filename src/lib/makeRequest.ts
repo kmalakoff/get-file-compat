@@ -8,7 +8,7 @@ export interface RequestOptions {
   timeout?: number;
 }
 
-export type RequestCallback = (err: Error | null, response?: http.IncomingMessage) => void;
+export type RequestCallback = (err: NodeJS.ErrnoException | null, response?: http.IncomingMessage) => void;
 
 export default function makeRequest(endpoint: string, callback: RequestCallback): void;
 export default function makeRequest(endpoint: string, options: RequestOptions, callback: RequestCallback): void;
@@ -20,18 +20,22 @@ export default function makeRequest(endpoint: string, optionsOrCallback: Request
   const match = URL_REGEX.exec(endpoint);
   const parsed = match ? { protocol: match[1], host: match[4], path: (match[5] || '') + (match[6] || '') } : null;
   const protocol = parsed?.protocol ?? '';
-  const host = parsed?.host ?? '';
+  const authority = parsed?.host ?? '';
   const pathname = parsed?.path ?? '';
 
-  if (!host) return cb(new Error(`Invalid URL: no host in '${endpoint}'`));
+  if (!authority) return cb(new Error(`Invalid URL: no host in '${endpoint}'`));
 
+  // Split a trailing numeric port off the authority; a bare colon elsewhere (an IPv6 literal)
+  // is out of scope since this package only ever targets named hosts.
+  const portMatch = /^(.*):(\d+)$/.exec(authority);
+  const host = portMatch ? portMatch[1] : authority;
   const secure = protocol === 'https:';
   const method = options.method || 'GET';
-  const requestOptions = { host, path: pathname, port: secure ? 443 : 80, method };
+  const requestOptions = { host, path: pathname, port: portMatch ? +portMatch[2] : secure ? 443 : 80, method };
   const req = secure ? https.request(requestOptions) : http.request(requestOptions);
 
   let called = false;
-  const end = (err: Error | null, res?: http.IncomingMessage) => {
+  const end = (err: NodeJS.ErrnoException | null, res?: http.IncomingMessage) => {
     if (called) return;
     called = true;
     cb(err, res);
@@ -40,7 +44,11 @@ export default function makeRequest(endpoint: string, optionsOrCallback: Request
   if (options.timeout) {
     req.setTimeout(options.timeout, () => {
       req.abort();
-      end(new Error(`Request timeout after ${options.timeout}ms`));
+      // ETIMEDOUT matches the code Node itself uses for socket timeouts, so callers can
+      // classify this the same way as any other timed-out connection.
+      const err: NodeJS.ErrnoException = new Error(`Request timeout after ${options.timeout}ms`);
+      err.code = 'ETIMEDOUT';
+      end(err);
     });
   }
 
