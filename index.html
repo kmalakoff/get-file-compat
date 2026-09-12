@@ -15,9 +15,18 @@
 </code><button type="button">Copy</button></pre>
 
 <h3 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">path</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;path&#39;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">os</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;os&#39;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">getFile</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;get-file-compat&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">filePath</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">getFile</span><span class="hl-1">(</span><span class="hl-2">&#39;https://nodejs.org/dist/v24.12.0/SHASUMS256.txt&#39;</span><span class="hl-1">, </span><span class="hl-4">path</span><span class="hl-1">.</span><span class="hl-0">join</span><span class="hl-1">(</span><span class="hl-4">os</span><span class="hl-1">.</span><span class="hl-0">tempDir</span><span class="hl-1">(), </span><span class="hl-2">&#39;SHASUMS256.txt&#39;</span><span class="hl-1">));</span>
+<pre><code class="javascript"><span class="hl-3">var</span><span class="hl-1"> </span><span class="hl-4">path</span><span class="hl-1"> = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&#39;path&#39;</span><span class="hl-1">);</span><br/><span class="hl-3">var</span><span class="hl-1"> </span><span class="hl-4">os</span><span class="hl-1"> = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&#39;os&#39;</span><span class="hl-1">);</span><br/><span class="hl-3">var</span><span class="hl-1"> </span><span class="hl-4">getFile</span><span class="hl-1"> = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&#39;get-file-compat&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-0">getFile</span><span class="hl-1">(</span><span class="hl-2">&#39;https://nodejs.org/dist/v24.12.0/SHASUMS256.txt&#39;</span><span class="hl-1">, </span><span class="hl-4">path</span><span class="hl-1">.</span><span class="hl-0">join</span><span class="hl-1">(</span><span class="hl-4">os</span><span class="hl-1">.</span><span class="hl-0">tmpdir</span><span class="hl-1">(), </span><span class="hl-2">&#39;SHASUMS256.txt&#39;</span><span class="hl-1">), </span><span class="hl-3">function</span><span class="hl-1"> (</span><span class="hl-4">err</span><span class="hl-1">, </span><span class="hl-4">result</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-4">err</span><span class="hl-1">) </span><span class="hl-5">throw</span><span class="hl-1"> </span><span class="hl-4">err</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">path</span><span class="hl-1">);</span><br/><span class="hl-1">});</span>
 </code><button type="button">Copy</button></pre>
 
+<p>The callback result includes the saved <code>path</code>, response <code>headers</code>, and <code>statusCode</code>. The promise form is also available on current Node.js versions.</p>
+<h3 id="api" class="tsd-anchor-link">API<a href="#api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><code>getFile(url, destination[, options], callback)</code> saves the response and returns <code>{ path, headers, statusCode }</code>.</li>
+<li><code>getContent(url[, encoding][, options], callback)</code> returns response content and metadata.</li>
+<li><code>getStream(url[, options], callback)</code> returns the response as a readable stream.</li>
+<li><code>head(url[, options], callback)</code> returns <code>{ statusCode, headers }</code> without downloading the body.</li>
+</ul>
+<p>Each function also has a promise form where supported by the runtime.</p>
 </div></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -35,7 +44,8 @@
 <div class="tsd-accordion-details"><a href="#get-file-compat"><span>get-<wbr/>file-<wbr/>compat</span></a>
 <ul>
 <li><a href="#installation"><span>Installation</span></a></li>
-<li><a href="#usage"><span>Usage</span></a></li></ul></div></details></div>
+<li><a href="#usage"><span>Usage</span></a></li>
+<li><a href="#api"><span>API</span></a></li></ul></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="modules.html">get-file-compat</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
