@@ -51,7 +51,6 @@
     "@types/node": "*",
     "@types/pump": "^1.1.3",
     "fs-remove-compat": "^1.0.0",
-    "mkdirp-classic": "^0.5.2",
     "node-version-use": "*",
     "pinkie-promise": "*",
     "ts-dev-stack": "*",
