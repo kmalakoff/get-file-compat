@@ -41,16 +41,17 @@
     "version": "tsds version"
   },
   "dependencies": {
+    "fs-remove-compat": "^1.0.0",
     "mkdirp-classic": "^0.5.2",
     "node-version-call-local": "^1.0.0",
     "on-one": "^1.0.0",
-    "pump": "^3.0.0"
+    "pump": "^3.0.0",
+    "temp-suffix": "^1.0.10"
   },
   "devDependencies": {
     "@types/mocha": "*",
     "@types/node": "*",
     "@types/pump": "^1.1.3",
-    "fs-remove-compat": "^1.0.0",
     "node-version-use": "*",
     "pinkie-promise": "*",
     "ts-dev-stack": "*",

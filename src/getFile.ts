@@ -1,9 +1,10 @@
 import * as fs from 'fs';
+import { rm } from 'fs-remove-compat';
 import mkdirp from 'mkdirp-classic';
 import { bind } from 'node-version-call-local';
-import oo from 'on-one';
 import * as path from 'path';
 import pump from 'pump';
+import tempSuffix from 'temp-suffix';
 import url from 'url';
 import makeRequest from './lib/makeRequest.ts';
 
@@ -22,10 +23,38 @@ function run(endpoint: string, dest: string, options: GetFileOptions, callback: 
     mkdirp(path.dirname(dest), (err: Error | null) => {
       if (err && (err as NodeJS.ErrnoException).code !== 'EEXIST') return callback(err);
 
-      const stream = pump(res, fs.createWriteStream(dest));
-      oo(stream, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
-        err ? callback(err) : callback(null, { path: dest, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 });
+      // write to a temporary name so a cut-off download never leaves a partial file at dest
+      const tempPath = tempSuffix(dest);
+      // pump's callback reports a cut-off response; the file stream alone can emit 'close' before that error.
+      // Older Node reports a cut-off only through the response's 'aborted' event, so that counts too (first outcome wins).
+      let finished = false;
+      const writeStream = fs.createWriteStream(tempPath);
+      const finish = (err?: Error | null) => {
+        if (finished) return;
+        finished = true;
+        if (err) return rm(tempPath, () => callback(err));
+
+        const done = () => callback(null, { path: dest, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 });
+        fs.rename(tempPath, dest, (err) => {
+          if (!err) return done();
+          const code = (err as NodeJS.ErrnoException).code;
+          // another process may have won the rename race (Windows reports EPERM when dest is locked): trust that only if a file is at dest
+          if (code === 'EPERM' || code === 'EEXIST' || code === 'ENOTEMPTY') {
+            return fs.stat(dest, (statErr, stats) => {
+              if (statErr || !stats.isFile()) return rm(tempPath, () => callback(err));
+              rm(tempPath, done);
+            });
+          }
+          rm(tempPath, () => callback(err));
+        });
+      };
+      res.on('aborted', () => {
+        if (finished || res.complete) return; // complete: the whole body arrived before the socket closed
+        const ws = writeStream as fs.WriteStream & { destroy?: () => void };
+        ws.destroy ? ws.destroy() : ws.end();
+        finish(new Error('Response aborted before the download completed'));
       });
+      pump(res, writeStream, finish);
     });
   });
 }
