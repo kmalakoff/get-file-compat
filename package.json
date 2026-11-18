@@ -46,6 +46,7 @@
     "node-version-call-local": "^1.0.0",
     "on-one": "^1.0.0",
     "pump": "^3.0.0",
+    "staged-cache": "^0.1.1",
     "temp-suffix": "^1.0.10"
   },
   "devDependencies": {

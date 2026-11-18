@@ -4,6 +4,7 @@ import mkdirp from 'mkdirp-classic';
 import { bind } from 'node-version-call-local';
 import * as path from 'path';
 import pump from 'pump';
+import { renameInto } from 'staged-cache';
 import tempSuffix from 'temp-suffix';
 import url from 'url';
 import makeRequest from './lib/makeRequest.ts';
@@ -34,19 +35,7 @@ function run(endpoint: string, dest: string, options: GetFileOptions, callback: 
         finished = true;
         if (err) return rm(tempPath, () => callback(err));
 
-        const done = () => callback(null, { path: dest, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 });
-        fs.rename(tempPath, dest, (err) => {
-          if (!err) return done();
-          const code = (err as NodeJS.ErrnoException).code;
-          // another process may have won the rename race (Windows reports EPERM when dest is locked): trust that only if a file is at dest
-          if (code === 'EPERM' || code === 'EEXIST' || code === 'ENOTEMPTY') {
-            return fs.stat(dest, (statErr, stats) => {
-              if (statErr || !stats.isFile()) return rm(tempPath, () => callback(err));
-              rm(tempPath, done);
-            });
-          }
-          rm(tempPath, () => callback(err));
-        });
+        renameInto(tempPath, dest, (err) => (err ? callback(err) : callback(null, { path: dest, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 })));
       };
       res.on('aborted', () => {
         if (finished || res.complete) return; // complete: the whole body arrived before the socket closed
