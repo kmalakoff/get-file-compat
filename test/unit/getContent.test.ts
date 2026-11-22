@@ -1,5 +1,6 @@
 import assert from 'assert';
 import { getContent } from 'get-file-compat';
+import * as http from 'http';
 import Pinkie from 'pinkie-promise';
 import { bufferFrom } from '../../src/compat.ts';
 
@@ -174,6 +175,77 @@ describe('getContent', () => {
       const bufferResult = await getContent(TEXT_URL);
       const hexResult = await getContent(TEXT_URL, 'hex');
       assert.strictEqual(bufferResult.content.toString('hex'), hexResult.content, 'Should be equal');
+    });
+  });
+
+  // node 0.x runs getContent in a blocking child process, so a server in this same process can never answer
+  const major = +process.versions.node.split('.')[0];
+  (major === 0 ? describe.skip : describe)('local server', () => {
+    const BODY = new Array(1001).join('0123456789');
+    const CUT_OFF = 'Response aborted before the download completed';
+    let server: http.Server;
+    let base: string;
+
+    before((done) => {
+      server = http.createServer((req, res) => {
+        if (req.url === '/full') {
+          res.writeHead(200, { 'Content-Length': BODY.length });
+          return res.end(BODY);
+        }
+        if (req.url === '/missing') {
+          res.writeHead(404, { 'Content-Length': 9 });
+          return res.end('not found');
+        }
+        // promise more than is sent, then drop the socket mid-body
+        res.writeHead(200, { 'Content-Length': BODY.length });
+        res.write(BODY.slice(0, 100), () => req.socket.destroy());
+      });
+      server.listen(0, '127.0.0.1', () => {
+        base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+        done();
+      });
+    });
+
+    after((done) => {
+      server.close(() => done());
+    });
+
+    it('full body: Buffer', async () => {
+      const result = await getContent(`${base}/full`);
+      assert.ok(Buffer.isBuffer(result.content));
+      assert.equal(result.content.length, BODY.length);
+      assert.equal(result.statusCode, 200);
+    });
+
+    it('full body: utf8 string', async () => {
+      const result = await getContent(`${base}/full`, 'utf8');
+      assert.equal(result.content, BODY);
+    });
+
+    it('cut-off body: error (callback)', (done) => {
+      getContent(`${base}/cut`, (err, result) => {
+        assert.ok(err, 'expected an error');
+        assert.ok(!result);
+        assert.equal(err.message, CUT_OFF);
+        done();
+      });
+    });
+
+    it('cut-off body: error (promise)', async () => {
+      let error: Error | undefined;
+      try {
+        await getContent(`${base}/cut`, 'utf8');
+      } catch (err) {
+        error = err as Error;
+      }
+      assert.ok(error, 'expected an error');
+      assert.equal(error.message, CUT_OFF);
+    });
+
+    it('404: success with statusCode and body', async () => {
+      const result = await getContent(`${base}/missing`, 'utf8');
+      assert.equal(result.statusCode, 404);
+      assert.equal(result.content, 'not found');
     });
   });
 });

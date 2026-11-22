@@ -22,12 +22,20 @@ function run(endpoint: string, encoding: BufferEncoding | null, options: GetCont
     res.on('data', (chunk: Buffer) => {
       chunks.push(chunk);
     });
-    oo(res, ['error', 'end', 'close', 'finish'], (err: Error | null) => {
+    // older Node reports a cut-off only through 'aborted'; the first outcome wins
+    let finished = false;
+    const finish = (err?: Error | null) => {
+      if (finished) return;
+      finished = true;
       if (err) return callback(err);
       const buffer = Buffer.concat(chunks);
       const content: Buffer | string = encoding ? buffer.toString(encoding) : buffer;
       callback(null, { content, headers: res.headers as Record<string, string | string[]>, statusCode: res.statusCode ?? 200 });
+    };
+    res.on('aborted', () => {
+      if (!res.complete) finish(new Error('Response aborted before the download completed'));
     });
+    oo(res, ['error', 'end', 'close', 'finish'], finish);
   });
 }
 
